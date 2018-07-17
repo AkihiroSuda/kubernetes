@@ -71,6 +71,7 @@ go_library(
         "//vendor/github.com/docker/go-connections/nat:go_default_library",
         "//vendor/github.com/golang/glog:go_default_library",
         "//vendor/k8s.io/utils/exec:go_default_library",
+        "//vendor/github.com/opencontainers/runc/libcontainer/system:go_default_library",
     ] + select({
         "@io_bazel_rules_go//go/platform:windows": [
             "//pkg/kubelet/apis:go_default_library",

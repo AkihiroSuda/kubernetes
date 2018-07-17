@@ -28,6 +28,7 @@ import (
 
 	units "github.com/docker/go-units"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
+	rsystem "github.com/opencontainers/runc/libcontainer/system"
 	"k8s.io/api/core/v1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/kubernetes/pkg/api/v1/resource"
@@ -82,7 +83,9 @@ func (m *qosContainerManagerImpl) Start(getNodeAllocatable func() v1.ResourceLis
 	cm := m.cgroupManager
 	rootContainer := m.cgroupRoot
 	if !cm.Exists(rootContainer) {
-		return fmt.Errorf("root container %v doesn't exist", rootContainer)
+		if !rsystem.RunningInUserNS() {
+			return fmt.Errorf("root container %v doesn't exist", rootContainer)
+		}
 	}
 
 	// Top level for Qos containers are created only for Burstable
