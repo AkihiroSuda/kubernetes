@@ -27,6 +27,7 @@ import (
 	dockercontainer "github.com/docker/docker/api/types/container"
 	dockerfilters "github.com/docker/docker/api/types/filters"
 	"github.com/golang/glog"
+	rsystem "github.com/opencontainers/runc/libcontainer/system"
 
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/runtime/v1alpha2"
@@ -523,11 +524,13 @@ func (ds *dockerService) ListPodSandbox(_ context.Context, r *runtimeapi.ListPod
 		checkpoint := NewPodSandboxCheckpoint("", "", &CheckpointData{})
 		err := ds.checkpointManager.GetCheckpoint(id, checkpoint)
 		if err != nil {
-			glog.Errorf("Failed to retrieve checkpoint for sandbox %q: %v", id, err)
-			if err == errors.ErrCorruptCheckpoint {
-				err = ds.checkpointManager.RemoveCheckpoint(id)
-				if err != nil {
-					glog.Errorf("Failed to delete corrupt checkpoint for sandbox %q: %v", id, err)
+			if !rsystem.RunningInUserNS() {
+				glog.Errorf("Failed to retrieve checkpoint for sandbox %q: %v", id, err)
+				if err == errors.ErrCorruptCheckpoint {
+					err = ds.checkpointManager.RemoveCheckpoint(id)
+					if err != nil {
+						glog.Errorf("Failed to delete corrupt checkpoint for sandbox %q: %v", id, err)
+					}
 				}
 			}
 			continue
