@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
+	rsystem "github.com/opencontainers/runc/libcontainer/system"
 
 	statsapi "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 )
@@ -99,7 +100,10 @@ func (sp *summaryProviderImpl) Get(updateStats bool) (*statsapi.Summary, error) 
 		}
 		s, _, err := sp.provider.GetCgroupStats(cont.name, cont.forceStatsUpdate)
 		if err != nil {
-			glog.Errorf("Failed to get system container stats for %q: %v", cont.name, err)
+			// if we are in userns, cgroups might not be available
+			if !rsystem.RunningInUserNS() {
+				glog.Errorf("Failed to get system container stats for %q: %v", cont.name, err)
+			}
 			continue
 		}
 		// System containers don't have a filesystem associated with them.
