@@ -28,6 +28,7 @@ go_library(
         "//vendor/github.com/emicklei/go-restful:go_default_library",
         "//vendor/github.com/google/cadvisor/info/v1:go_default_library",
         "//vendor/k8s.io/klog:go_default_library",
+        "//vendor/github.com/opencontainers/runc/libcontainer/system:go_default_library",
     ],
 )
 
