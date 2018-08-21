@@ -33,6 +33,7 @@ import (
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	cgroupfs2 "github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 	"github.com/opencontainers/runc/libcontainer/configs"
+	libcontainersystem "github.com/opencontainers/runc/libcontainer/system"
 	"k8s.io/klog/v2"
 	"k8s.io/mount-utils"
 	utilio "k8s.io/utils/io"
@@ -454,6 +455,13 @@ func setupKernelTunables(option KernelTunableBehavior) error {
 			klog.V(2).InfoS("Updating kernel flag", "flag", flag, "expectedValue", expectedValue, "actualValue", val)
 			err = sysctl.SetSysctl(flag, expectedValue)
 			if err != nil {
+				if libcontainersystem.RunningInUserNS() {
+					if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.KubeletInUserNamespace) {
+						klog.Warningf("Updating kernel flag failed: %v: %v (running in UserNS, ignoring)", flag, err)
+						continue
+					}
+					klog.Errorf("Updating kernel flag failed: %v: %v (Hint: enable KubeletInUserNamespace feature flag to ignore the error)", flag, err)
+				}
 				errList = append(errList, err)
 			}
 		}
