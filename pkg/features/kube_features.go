@@ -733,6 +733,14 @@ const (
 	//
 	// Enables support for 'HostProcess' containers on Windows nodes.
 	WindowsHostProcessContainers featuregate.Feature = "WindowsHostProcessContainers"
+
+	// owner: @AkihiroSuda
+	// alpha: v1.22
+	//
+	// Enables support for running kubelet in a user namespace.
+	// The user namespace has to be created before running kubelet.
+	// All the node components such as CRI need to be running in the same user namespace.
+	KubeletInUserNamespace featuregate.Feature = "KubeletInUserNamespace"
 )
 
 func init() {
@@ -844,6 +852,7 @@ var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureS
 	CSIVolumeHealth:                                {Default: false, PreRelease: featuregate.Alpha},
 	WindowsHostProcessContainers:                   {Default: false, PreRelease: featuregate.Alpha},
 	DisableCloudProviders:                          {Default: false, PreRelease: featuregate.Alpha},
+	KubeletInUserNamespace:                         {Default: false, PreRelease: featuregate.Alpha},
 
 	// inherited features from generic apiserver, relisted here to get a conflict if it is changed
 	// unintentionally on either side:
