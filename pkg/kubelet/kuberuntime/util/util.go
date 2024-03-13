@@ -21,6 +21,7 @@ import (
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/klog/v2"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
+	"k8s.io/kubernetes/pkg/kubelet/runtimeclass"
 )
 
 // PodSandboxChanged checks whether the spec of the pod is changed and returns
@@ -99,10 +100,14 @@ func PidNamespaceForPod(pod *v1.Pod) runtimeapi.NamespaceMode {
 
 // namespacesForPod returns the runtimeapi.NamespaceOption for a given pod.
 // An empty or nil pod can be used to get the namespace defaults for v1.Pod.
-func NamespacesForPod(pod *v1.Pod, runtimeHelper kubecontainer.RuntimeHelper) (*runtimeapi.NamespaceOption, error) {
+func NamespacesForPod(pod *v1.Pod, runtimeHelper kubecontainer.RuntimeHelper, rcManager *runtimeclass.Manager) (*runtimeapi.NamespaceOption, error) {
 	runtimeHandler := ""
-	if pod != nil && pod.Spec.RuntimeClassName != nil {
-		runtimeHandler = *pod.Spec.RuntimeClassName
+	if pod != nil && rcManager != nil {
+		var err error
+		runtimeHandler, err = rcManager.LookupRuntimeHandler(pod.Spec.RuntimeClassName)
+		if err != nil {
+			return nil, err
+		}
 	}
 	userNs, err := runtimeHelper.GetOrCreateUserNamespaceMappings(pod, runtimeHandler)
 	if err != nil {

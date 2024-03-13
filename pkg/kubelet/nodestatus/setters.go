@@ -30,6 +30,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/errors"
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -43,6 +44,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/cm"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/events"
+	"k8s.io/kubernetes/pkg/kubelet/runtimeclass"
 	"k8s.io/kubernetes/pkg/volume"
 	netutils "k8s.io/utils/net"
 
@@ -481,18 +483,41 @@ func GoRuntime() Setter {
 }
 
 // RuntimeClasses returns a Setter that sets RuntimeClasses on the node.
-func RuntimeClasses(fn func() []kubecontainer.RuntimeHandler) Setter {
+func RuntimeClasses(
+	rcManager *runtimeclass.Manager,
+	handlersFunc func() []kubecontainer.RuntimeHandler,
+) Setter {
 	return func(ctx context.Context, node *v1.Node) error {
-		if !utilfeature.DefaultFeatureGate.Enabled(features.RecursiveReadOnlyMounts) {
+		if rcManager == nil || !utilfeature.DefaultFeatureGate.Enabled(features.RecursiveReadOnlyMounts) {
 			return nil
 		}
-		handlers := fn()
-		node.Status.RuntimeClasses = make([]v1.NodeRuntimeClass, len(handlers))
-		for i, h := range handlers {
+		handlers := handlersFunc()
+		handlersMap := make(map[string]kubecontainer.RuntimeHandler, len(handlers))
+		for _, h := range handlers {
+			handlersMap[h.Name] = h
+		}
+
+		classes, err := rcManager.Lister().List(labels.Everything())
+		if err != nil {
+			return err
+		}
+		node.Status.RuntimeClasses = make([]v1.NodeRuntimeClass, len(classes))
+		for i, class := range classes {
+			handlerName, err := rcManager.LookupRuntimeHandler(&class.Name)
+			if err != nil {
+				klog.ErrorS(err, "Failed to look up the runtime handler", "runtimeClassName", class.Name)
+				continue
+			}
+			handler, ok := handlersMap[handlerName]
+			if !ok {
+				klog.ErrorS(nil, "Failed to look up the runtime handler", "runtimeClassName", class.Name,
+					"runtimeHandlerName", handlerName)
+				continue
+			}
 			node.Status.RuntimeClasses[i] = v1.NodeRuntimeClass{
-				Name: h.Name,
+				Name: class.Name,
 				Features: &v1.NodeRuntimeClassFeatures{
-					RecursiveReadOnlyMounts: &h.SupportsRecursiveReadOnlyMounts,
+					RecursiveReadOnlyMounts: &handler.SupportsRecursiveReadOnlyMounts,
 				},
 			}
 		}

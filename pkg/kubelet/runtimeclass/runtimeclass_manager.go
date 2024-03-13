@@ -76,3 +76,8 @@ func (m *Manager) LookupRuntimeHandler(runtimeClassName *string) (string, error)
 
 	return rc.Handler, nil
 }
+
+// Lister returns the runtime class lister.:w
+func (m *Manager) Lister() nodev1.RuntimeClassLister {
+	return m.lister
+}
