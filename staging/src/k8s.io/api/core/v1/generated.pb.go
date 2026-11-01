@@ -2083,6 +2083,18 @@ func (m *Container) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.HostCgroupNamespace != nil {
+		i--
+		if *m.HostCgroupNamespace {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xd0
+	}
 	if len(m.RestartPolicyRules) > 0 {
 		for iNdEx := len(m.RestartPolicyRules) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -3683,6 +3695,18 @@ func (m *EphemeralContainerCommon) MarshalToSizedBuffer(dAtA []byte) (int, error
 	_ = i
 	var l int
 	_ = l
+	if m.HostCgroupNamespace != nil {
+		i--
+		if *m.HostCgroupNamespace {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xd0
+	}
 	if len(m.RestartPolicyRules) > 0 {
 		for iNdEx := len(m.RestartPolicyRules) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -6966,6 +6990,16 @@ func (m *NodeRuntimeHandlerFeatures) MarshalToSizedBuffer(dAtA []byte) (int, err
 	_ = i
 	var l int
 	_ = l
+	if m.CgroupNamespaces != nil {
+		i--
+		if *m.CgroupNamespaces {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.UserNamespaces != nil {
 		i--
 		if *m.UserNamespaces {
@@ -16220,6 +16254,9 @@ func (m *Container) Size() (n int) {
 			n += 2 + l + sovGenerated(uint64(l))
 		}
 	}
+	if m.HostCgroupNamespace != nil {
+		n += 3
+	}
 	return n
 }
 
@@ -16820,6 +16857,9 @@ func (m *EphemeralContainerCommon) Size() (n int) {
 			l = e.Size()
 			n += 2 + l + sovGenerated(uint64(l))
 		}
+	}
+	if m.HostCgroupNamespace != nil {
+		n += 3
 	}
 	return n
 }
@@ -17948,6 +17988,9 @@ func (m *NodeRuntimeHandlerFeatures) Size() (n int) {
 		n += 2
 	}
 	if m.UserNamespaces != nil {
+		n += 2
+	}
+	if m.CgroupNamespaces != nil {
 		n += 2
 	}
 	return n
@@ -21606,6 +21649,7 @@ func (this *Container) String() string {
 		`ResizePolicy:` + repeatedStringForResizePolicy + `,`,
 		`RestartPolicy:` + valueToStringGenerated(this.RestartPolicy) + `,`,
 		`RestartPolicyRules:` + repeatedStringForRestartPolicyRules + `,`,
+		`HostCgroupNamespace:` + valueToStringGenerated(this.HostCgroupNamespace) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -22050,6 +22094,7 @@ func (this *EphemeralContainerCommon) String() string {
 		`ResizePolicy:` + repeatedStringForResizePolicy + `,`,
 		`RestartPolicy:` + valueToStringGenerated(this.RestartPolicy) + `,`,
 		`RestartPolicyRules:` + repeatedStringForRestartPolicyRules + `,`,
+		`HostCgroupNamespace:` + valueToStringGenerated(this.HostCgroupNamespace) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -22934,6 +22979,7 @@ func (this *NodeRuntimeHandlerFeatures) String() string {
 	s := strings.Join([]string{`&NodeRuntimeHandlerFeatures{`,
 		`RecursiveReadOnlyMounts:` + valueToStringGenerated(this.RecursiveReadOnlyMounts) + `,`,
 		`UserNamespaces:` + valueToStringGenerated(this.UserNamespaces) + `,`,
+		`CgroupNamespaces:` + valueToStringGenerated(this.CgroupNamespaces) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -30972,6 +31018,27 @@ func (m *Container) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 26:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HostCgroupNamespace", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.HostCgroupNamespace = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -35933,6 +36000,27 @@ func (m *EphemeralContainerCommon) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 26:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HostCgroupNamespace", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.HostCgroupNamespace = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -45661,6 +45749,27 @@ func (m *NodeRuntimeHandlerFeatures) Unmarshal(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.UserNamespaces = &b
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CgroupNamespaces", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.CgroupNamespaces = &b
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

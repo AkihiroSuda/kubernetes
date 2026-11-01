@@ -4892,6 +4892,9 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: io.k8s.api.core.v1.EnvFromSource
           elementRelationship: atomic
+    - name: hostCgroupNamespace
+      type:
+        scalar: boolean
     - name: image
       type:
         scalar: string
@@ -5391,6 +5394,9 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: io.k8s.api.core.v1.EnvFromSource
           elementRelationship: atomic
+    - name: hostCgroupNamespace
+      type:
+        scalar: boolean
     - name: image
       type:
         scalar: string
@@ -6347,6 +6353,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: io.k8s.api.core.v1.NodeRuntimeHandlerFeatures
   map:
     fields:
+    - name: cgroupNamespaces
+      type:
+        scalar: boolean
     - name: recursiveReadOnlyMounts
       type:
         scalar: boolean
