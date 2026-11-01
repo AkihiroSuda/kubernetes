@@ -24782,6 +24782,7 @@ func TestValidateOSFields(t *testing.T) {
 	// - Add documentation to the os field in the api
 	// - Add validation logic validateLinux, validateWindows functions to make sure the field is only set for eligible OSes
 	osSpecificFields := sets.NewString(
+		"Containers[*].HostCgroupNamespace",
 		"Containers[*].SecurityContext.AppArmorProfile",
 		"Containers[*].SecurityContext.AllowPrivilegeEscalation",
 		"Containers[*].SecurityContext.Capabilities",
@@ -24793,6 +24794,7 @@ func TestValidateOSFields(t *testing.T) {
 		"Containers[*].SecurityContext.SELinuxOptions",
 		"Containers[*].SecurityContext.SeccompProfile",
 		"Containers[*].SecurityContext.WindowsOptions",
+		"InitContainers[*].HostCgroupNamespace",
 		"InitContainers[*].SecurityContext.AppArmorProfile",
 		"InitContainers[*].SecurityContext.AllowPrivilegeEscalation",
 		"InitContainers[*].SecurityContext.Capabilities",
@@ -24804,6 +24806,7 @@ func TestValidateOSFields(t *testing.T) {
 		"InitContainers[*].SecurityContext.SELinuxOptions",
 		"InitContainers[*].SecurityContext.SeccompProfile",
 		"InitContainers[*].SecurityContext.WindowsOptions",
+		"EphemeralContainers[*].EphemeralContainerCommon.HostCgroupNamespace",
 		"EphemeralContainers[*].EphemeralContainerCommon.SecurityContext.AppArmorProfile",
 		"EphemeralContainers[*].EphemeralContainerCommon.SecurityContext.AllowPrivilegeEscalation",
 		"EphemeralContainers[*].EphemeralContainerCommon.SecurityContext.Capabilities",
@@ -28189,6 +28192,43 @@ func TestValidateHostUsers(t *testing.T) {
 		opts: PodValidationOptions{
 			AllowUserNamespacesWithVolumeDevices: true,
 		},
+	}, {
+		name:    "hostUsers=false & hostCgroupNamespace=false",
+		success: true,
+		spec: &core.PodSpec{
+			HostUsers:  &falseVar,
+			Containers: []core.Container{{Name: "test-container", HostCgroupNamespace: &falseVar}},
+		},
+	}, {
+		name:    "hostUsers=true & hostCgroupNamespace=true",
+		success: true,
+		spec: &core.PodSpec{
+			HostUsers:  &trueVar,
+			Containers: []core.Container{{Name: "test-container", HostCgroupNamespace: &trueVar}},
+		},
+	}, {
+		name:    "hostUsers=false & container hostCgroupNamespace=true",
+		success: false,
+		spec: &core.PodSpec{
+			HostUsers:  &falseVar,
+			Containers: []core.Container{{Name: "test-container", HostCgroupNamespace: &trueVar}},
+		},
+	}, {
+		name:    "hostUsers=false & initContainer hostCgroupNamespace=true",
+		success: false,
+		spec: &core.PodSpec{
+			HostUsers:      &falseVar,
+			InitContainers: []core.Container{{Name: "test-container", HostCgroupNamespace: &trueVar}},
+		},
+	}, {
+		name:    "hostUsers=false & ephemeralContainer hostCgroupNamespace=true",
+		success: false,
+		spec: &core.PodSpec{
+			HostUsers: &falseVar,
+			EphemeralContainers: []core.EphemeralContainer{{
+				EphemeralContainerCommon: core.EphemeralContainerCommon{Name: "test-container", HostCgroupNamespace: &trueVar},
+			}},
+		},
 	},
 	}
 
@@ -28202,6 +28242,32 @@ func TestValidateHostUsers(t *testing.T) {
 			}
 			if tc.success && len(allErrs) != 0 {
 				t.Errorf("Unexpected error(s): %v", allErrs)
+			}
+		})
+	}
+}
+
+func TestValidateHostCgroupNamespaceOS(t *testing.T) {
+	fldPath := field.NewPath("spec")
+	for _, hostCgroupNamespace := range []bool{true, false} {
+		spec := &core.PodSpec{
+			InitContainers: []core.Container{{Name: "init", HostCgroupNamespace: ptr.To(hostCgroupNamespace)}},
+			Containers:     []core.Container{{Name: "ctr", HostCgroupNamespace: ptr.To(hostCgroupNamespace)}},
+			EphemeralContainers: []core.EphemeralContainer{{
+				EphemeralContainerCommon: core.EphemeralContainerCommon{Name: "eph", HostCgroupNamespace: ptr.To(hostCgroupNamespace)},
+			}},
+		}
+		t.Run(fmt.Sprintf("hostCgroupNamespace=%v", hostCgroupNamespace), func(t *testing.T) {
+			if errs := validateLinux(spec, fldPath); len(errs) != 0 {
+				t.Errorf("unexpected errors for a linux pod: %v", errs)
+			}
+			expected := field.ErrorList{
+				field.Forbidden(fldPath.Child("initContainers").Index(0).Child("hostCgroupNamespace"), "cannot be set for a windows pod"),
+				field.Forbidden(fldPath.Child("containers").Index(0).Child("hostCgroupNamespace"), "cannot be set for a windows pod"),
+				field.Forbidden(fldPath.Child("ephemeralContainers").Index(0).Child("hostCgroupNamespace"), "cannot be set for a windows pod"),
+			}
+			if errs := validateWindows(spec, fldPath); !reflect.DeepEqual(errs, expected) {
+				t.Errorf("unexpected errors for a windows pod: %v", cmp.Diff(expected, errs))
 			}
 		})
 	}
